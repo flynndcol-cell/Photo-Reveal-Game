@@ -1,2 +1,2 @@
 # Photo-Reveal-Game
-Just A Game
+GameLink : https://flynndcol-cell.github.io/Photo-Reveal-Game/
