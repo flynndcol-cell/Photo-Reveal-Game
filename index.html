@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Photo Reveal Game</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #1e1e1e;
+            color: #e0e0e0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        header {
+            background-color: #2d2d2d;
+            padding: 12px 20px;
+            border-bottom: 1px solid #3d3d3d;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .header-left {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #ffffff;
+            margin-right: 10px;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        label {
+            font-size: 14px;
+            color: #cccccc;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .btn {
+            background-color: #0e639c;
+            color: #ffffff;
+            border: none;
+            padding: 6px 14px;
+            font-size: 14px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .btn:hover {
+            background-color: #1177bb;
+        }
+
+        .btn-secondary {
+            background-color: #3c3c3c;
+            color: #cccccc;
+        }
+
+        .btn-secondary:hover {
+            background-color: #4c4c4c;
+        }
+
+        .btn-danger {
+            background-color: #a12626;
+        }
+
+        .btn-danger:hover {
+            background-color: #b82d2d;
+        }
+
+        input[type="number"] {
+            background-color: #3c3c3c;
+            border: 1px solid #555555;
+            color: #ffffff;
+            padding: 5px 8px;
+            border-radius: 4px;
+            width: 60px;
+            font-size: 14px;
+        }
+
+        .btn-help {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background-color: #3c3c3c;
+            color: #cccccc;
+            border: 1px solid #555555;
+            font-size: 16px;
+            font-weight: bold;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+        }
+
+        .btn-help:hover {
+            background-color: #0e639c;
+            color: #ffffff;
+            border-color: #1177bb;
+        }
+
+        main {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #stage-container {
+            position: relative;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+            background-color: #111111;
+            display: none;
+        }
+
+        #bg-image {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        #grid-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: grid;
+        }
+
+        .tile {
+            background-color: #2a2a2a;
+            border: 1px solid #3a3a3a;
+            cursor: pointer;
+            transition: opacity 0.3s ease, background-color 0.2s;
+            user-select: none;
+        }
+
+        .tile:hover {
+            background-color: #3a3a3a;
+        }
+
+        .tile.revealed {
+            opacity: 0;
+            pointer-events: auto;
+        }
+
+        #empty-notice {
+            color: #888888;
+            font-size: 16px;
+            text-align: center;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background-color: #2d2d2d;
+            border: 1px solid #3d3d3d;
+            border-radius: 6px;
+            width: 500px;
+            max-width: 90%;
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+        }
+
+        .modal-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid #3d3d3d;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #ffffff;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: #aaaaaa;
+            font-size: 18px;
+            cursor: pointer;
+        }
+
+        .modal-close:hover {
+            color: #ffffff;
+        }
+
+        .modal-body {
+            padding: 20px;
+            overflow-y: auto;
+            font-size: 14px;
+            line-height: 1.6;
+            color: #cccccc;
+        }
+
+        .modal-body h3 {
+            font-size: 15px;
+            color: #ffffff;
+            margin-top: 12px;
+            margin-bottom: 6px;
+        }
+
+        .modal-body h3:first-child {
+            margin-top: 0;
+        }
+
+        .modal-body ul {
+            padding-left: 20px;
+        }
+
+        .modal-body li {
+            margin-bottom: 4px;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="header-left">
+            <div class="title">Photo Reveal Game</div>
+
+            <div class="control-group">
+                <button class="btn" onclick="document.getElementById('file-input').click()">選擇圖片</button>
+                <input type="file" id="file-input" accept="image/*">
+            </div>
+
+            <div class="control-group">
+                <label for="grid-size">分割格數 (N x N):</label>
+                <!-- 預設改為 8 -->
+                <input type="number" id="grid-size" value="8" min="2" max="20">
+            </div>
+
+            <div class="control-group">
+                <button class="btn btn-secondary" id="btn-reveal-all">一鍵打開</button>
+                <button class="btn btn-secondary" id="btn-hide-all">一鍵關閉</button>
+            </div>
+
+            <div class="control-group">
+                <label for="delay-time">間隔秒數:</label>
+                <!-- 預設改為 0.5，步進改為 0.1 -->
+                <input type="number" id="delay-time" value="0.5" min="0.1" max="10.0" step="0.1">
+                <button class="btn" id="btn-play">播放打開</button>
+            </div>
+        </div>
+
+        <div>
+            <button class="btn-help" id="btn-help" title="使用說明">?</button>
+        </div>
+    </header>
+
+    <main id="main-area">
+        <div id="empty-notice">請選擇一張圖片開始遊戲</div>
+        <div id="stage-container">
+            <img id="bg-image" alt="Source Image">
+            <div id="grid-overlay"></div>
+        </div>
+    </main>
+
+    <div class="modal-overlay" id="help-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">使用說明</div>
+                <button class="modal-close" id="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <h3>1. 開始遊戲</h3>
+                <p>點擊頂部的「選擇圖片」按鈕，從您的裝置中上傳任意格式的圖片檔案。</p>
+                
+                <h3>2. 設定分割格數</h3>
+                <p>在「分割格數」輸入框中調整網格密度（預設為 8x8，支援 2 至 20 格）。圖片會自動適應畫面比例，絕不變形。</p>
+
+                <h3>3. 互動操作</h3>
+                <ul>
+                  <li><strong>單獨點擊：</strong>點擊任一方塊可將其掀開；再次點擊即可重新蓋上。</li>
+                  <li><strong>一鍵打開：</strong>瞬間揭曉整張圖片。</li>
+                  <li><strong>一鍵關閉：</strong>瞬間重新遮蓋整張圖片。</li>
+                </ul>
+
+                <h3>4. 自動播放功能</h3>
+                <p>設定每張方塊掀開之間的等待間隔秒數（預設為 0.5 秒，支援 0.1 秒至 10 秒），點擊「播放打開」即可自動隨機依序解開方塊。點擊「停止播放」可隨時計時中止。</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const fileInput = document.getElementById('file-input');
+        const gridSizeInput = document.getElementById('grid-size');
+        const delayTimeInput = document.getElementById('delay-time');
+        const btnRevealAll = document.getElementById('btn-reveal-all');
+        const btnHideAll = document.getElementById('btn-hide-all');
+        const btnPlay = document.getElementById('btn-play');
+        const mainArea = document.getElementById('main-area');
+        const stageContainer = document.getElementById('stage-container');
+        const bgImage = document.getElementById('bg-image');
+        const gridOverlay = document.getElementById('grid-overlay');
+        const emptyNotice = document.getElementById('empty-notice');
+
+        const btnHelp = document.getElementById('btn-help');
+        const helpModal = document.getElementById('help-modal');
+        const modalClose = document.getElementById('modal-close');
+
+        let originalImageWidth = 0;
+        let originalImageHeight = 0;
+        let isPlaying = false;
+        let playTimer = null;
+
+        btnHelp.addEventListener('click', () => {
+            helpModal.style.display = 'flex';
+        });
+
+        modalClose.addEventListener('click', () => {
+            helpModal.style.display = 'none';
+        });
+
+        helpModal.addEventListener('click', (e) => {
+            if (e.target === helpModal) {
+                helpModal.style.display = 'none';
+            }
+        });
+
+        fileInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                bgImage.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+
+        bgImage.addEventListener('load', function() {
+            originalImageWidth = bgImage.naturalWidth;
+            originalImageHeight = bgImage.naturalHeight;
+            emptyNotice.style.display = 'none';
+            stageContainer.style.display = 'block';
+            resizeStage();
+            buildGrid();
+        });
+
+        window.addEventListener('resize', () => {
+            if (bgImage.src) {
+                resizeStage();
+            }
+        });
+
+        function resizeStage() {
+            if (!originalImageWidth || !originalImageHeight) return;
+
+            const maxW = mainArea.clientWidth - 40;
+            const maxH = mainArea.clientHeight - 40;
+
+            const ratio = Math.min(maxW / originalImageWidth, maxH / originalImageHeight);
+            const renderW = Math.floor(originalImageWidth * ratio);
+            const renderH = Math.floor(originalImageHeight * ratio);
+
+            stageContainer.style.width = renderW + 'px';
+            stageContainer.style.height = renderH + 'px';
+        }
+
+        gridSizeInput.addEventListener('change', () => {
+            let val = parseInt(gridSizeInput.value, 10);
+            if (isNaN(val) || val < 2) val = 2;
+            if (val > 20) val = 20;
+            gridSizeInput.value = val;
+            if (bgImage.src) {
+                stopAutoplay();
+                buildGrid();
+            }
+        });
+
+        function buildGrid() {
+            gridOverlay.innerHTML = '';
+            const n = parseInt(gridSizeInput.value, 10);
+            gridOverlay.style.gridTemplateColumns = `repeat(${n}, 1fr)`;
+            gridOverlay.style.gridTemplateRows = `repeat(${n}, 1fr)`;
+
+            const total = n * n;
+            for (let i = 0; i < total; i++) {
+                const tile = document.createElement('div');
+                tile.classList.add('tile');
+                tile.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    this.classList.toggle('revealed');
+                });
+                gridOverlay.appendChild(tile);
+            }
+        }
+
+        btnRevealAll.addEventListener('click', () => {
+            stopAutoplay();
+            const tiles = document.querySelectorAll('.tile');
+            tiles.forEach(tile => tile.classList.add('revealed'));
+        });
+
+        btnHideAll.addEventListener('click', () => {
+            stopAutoplay();
+            const tiles = document.querySelectorAll('.tile');
+            tiles.forEach(tile => tile.classList.remove('revealed'));
+        });
+
+        btnPlay.addEventListener('click', () => {
+            if (isPlaying) {
+                stopAutoplay();
+            } else {
+                startAutoplay();
+            }
+        });
+
+        function startAutoplay() {
+            const unrevealedTiles = Array.from(document.querySelectorAll('.tile:not(.revealed)'));
+            if (unrevealedTiles.length === 0) {
+                const tiles = document.querySelectorAll('.tile');
+                tiles.forEach(tile => tile.classList.remove('revealed'));
+            }
+
+            isPlaying = true;
+            btnPlay.textContent = '停止播放';
+            btnPlay.classList.add('btn-danger');
+
+            executePlayStep();
+        }
+
+        function executePlayStep() {
+            const unrevealedTiles = Array.from(document.querySelectorAll('.tile:not(.revealed)'));
+            if (unrevealedTiles.length === 0) {
+                stopAutoplay();
+                return;
+            }
+
+            const randomIndex = Math.floor(Math.random() * unrevealedTiles.length);
+            unrevealedTiles[randomIndex].classList.add('revealed');
+
+            let delaySec = parseFloat(delayTimeInput.value);
+            if (isNaN(delaySec) || delaySec < 0.1) delaySec = 0.5;
+
+            playTimer = setTimeout(executePlayStep, delaySec * 1000);
+        }
+
+        function stopAutoplay() {
+            isPlaying = false;
+            if (playTimer) {
+                clearTimeout(playTimer);
+                playTimer = null;
+            }
+            btnPlay.textContent = '播放打開';
+            btnPlay.classList.remove('btn-danger');
+        }
+    </script>
+</body>
+</html>
